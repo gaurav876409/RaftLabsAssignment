@@ -1,14 +1,57 @@
-import { StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { FlatList, View, StyleSheet, Text } from 'react-native';
+import { Link } from 'expo-router';  
+import SearchBar from '../../components/SearchBar';
+import PropertyCard from '../../components/PropertyCard';
+import { usePropertiesStore } from '../../state/propertiesStore';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+export default function HomeScreen() {
+  const { properties, fetchProperties } = usePropertiesStore();
+  const [searchQuery, setSearchQuery] = useState('');
 
-export default function TabOneScreen() {
+  // Fetch properties when the screen loads
+  useEffect(() => {
+    fetchProperties();
+  }, []);
+
+  // Filter properties based on search query
+  const filteredProperties = properties.filter((property) =>
+    property.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
+      {/* Search Bar */}
+      <SearchBar
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="Search properties..."
+      />
+
+      {/* Property List */}
+      {filteredProperties.length > 0 ? (
+        <FlatList 
+          data={filteredProperties}
+          renderItem={({ item }) => (
+            <Link
+              href={{
+                pathname: '/propertyDetails',
+                params: { property: JSON.stringify(item) },
+              }}
+            >
+              <View style = {styles.list}>
+              <PropertyCard property={item} />
+              </View>
+            </Link>
+          )}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+        />
+      ) : (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>No properties found.</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -16,16 +59,20 @@ export default function TabOneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f9f9f9',
+    padding: 15,
+  },
+  list: {
+    // paddingVertical: 10,
+    width: '100%'
+  },
+  emptyState: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
+  emptyStateText: {
+    fontSize: 18,
+    color: '#888',
   },
 });
